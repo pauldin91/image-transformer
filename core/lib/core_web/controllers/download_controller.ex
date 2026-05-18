@@ -4,9 +4,8 @@ defmodule CoreWeb.DownloadController do
   alias Core.Uploads
 
   def download(conn, %{"id" => id}) do
-    result = fetch_batch(id, conn.assigns.current_user.id)
 
-    with result,
+    with fetch_batch(id, conn.assigns.current_user.id),
          {:ok, zip_path} <- Storage.download_batch(id) do
       conn
       |> put_resp_header("content-disposition", ~s(attachment; filename="#{id}.zip"))

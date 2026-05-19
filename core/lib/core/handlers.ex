@@ -17,18 +17,20 @@ defmodule Core.Handlers do
         user,
         %{files: files, transform: transform, batch_id: batch_id, props: props}
       ) do
-    with :ok <- publish_batch(
-      %Core.Mappings.Batch{
-        id: batch_id,
-        user_id: user.id,
-        files: files,
-        status: "queued",
-        timestamp: DateTime.utc_now,
-        transform: %{
-          name: transform,
-          props: props
-        }
-    }) do
+    with {:ok, result} <-
+           Jason.encode(%Core.Mappings.Batch{
+             id: batch_id,
+             user_id: user.id,
+             files: files,
+             status: "queued",
+             timestamp: DateTime.utc_now(),
+             transform: %{
+               name: transform,
+               props: props
+             }
+           }),
+         :ok <-
+           publish_batch(result) do
       {:ok, batch_id}
     end
 
@@ -63,7 +65,7 @@ defmodule Core.Handlers do
              | timestamp: batch.inserted_at,
                status: status
            }) do
-        #  :ok <- publish_batch(serialized, batch_dto.transform.name) do
+      #  :ok <- publish_batch(serialized, batch_dto.transform.name) do
       {:ok, batch.id}
     end
   end
@@ -91,7 +93,7 @@ defmodule Core.Handlers do
     end
   end
 
-  defp publish_batch(%Core.Mappings.Batch{}=batch) do
+  defp publish_batch(batch) do
     queue =
       cond do
         batch.transform.name == "convert" -> get_event_queue(:none)

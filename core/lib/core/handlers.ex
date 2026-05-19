@@ -6,21 +6,43 @@ defmodule Core.Handlers do
 
   alias Core.Mappings.Stored
 
+  @spec handle_upload(any(), %{
+          :batch_id => any(),
+          :files => any(),
+          :props => any(),
+          :transform => any(),
+          optional(any()) => any()
+        }) :: {:ok, any()}
   def handle_upload(
         user,
         %{files: files, transform: transform, batch_id: batch_id, props: props}
       ) do
-    create_batch_with_pictures(
+    with :ok <- publish_batch(
       %Core.Mappings.Batch{
         id: batch_id,
+        user_id: user.id,
         files: files,
+        status: "queued",
+        timestamp: DateTime.utc_now,
         transform: %{
           name: transform,
           props: props
         }
-      },
-      %{user_id: user.id}
-    )
+    }) do
+      {:ok, batch_id}
+    end
+
+    # create_batch_with_pictures(
+    #   %Core.Mappings.Batch{
+    #     id: batch_id,
+    #     files: files,
+    #     transform: %{
+    #       name: transform,
+    #       props: props
+    #     }
+    #   },
+    #   %{user_id: user.id}
+    # )
   end
 
   defp create_batch_with_pictures(%Core.Mappings.Batch{} = batch_dto, %{user_id: user_id}) do
@@ -35,13 +57,13 @@ defmodule Core.Handlers do
              inserted_at: batch_dto.timestamp
            }),
          :ok <- link_all_pictures(batch_dto),
-         {:ok, serialized} <-
+         {:ok, _serialized} <-
            Metadata.save(%Core.Mappings.Batch{
              batch_dto
              | timestamp: batch.inserted_at,
                status: status
-           }),
-         :ok <- publish_batch(serialized, batch_dto.transform.name) do
+           }) do
+        #  :ok <- publish_batch(serialized, batch_dto.transform.name) do
       {:ok, batch.id}
     end
   end
@@ -69,14 +91,14 @@ defmodule Core.Handlers do
     end
   end
 
-  defp publish_batch(serialized, transform) do
+  defp publish_batch(%Core.Mappings.Batch{}=batch) do
     queue =
       cond do
-        transform == "convert" -> get_event_queue(:none)
-        true -> get_event_queue(transform)
+        batch.transform.name == "convert" -> get_event_queue(:none)
+        true -> get_event_queue(batch.transform.name)
       end
 
-    Core.RabbitMq.Publisher.publish_message(queue, serialized)
+    Core.RabbitMq.Publisher.publish_message(queue, batch)
   end
 
   defp get_event_queue(:none), do: Application.fetch_env!(:core, :processing_queues) |> Enum.at(0)

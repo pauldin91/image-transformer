@@ -6,45 +6,13 @@ defmodule Core.Handlers do
 
   alias Core.Mappings.Stored
 
-  @spec handle_upload(any(), %{
-          :batch_id => any(),
-          :files => any(),
-          :props => any(),
-          :transform => any(),
-          optional(any()) => any()
-        }) :: {:ok, any()}
-  def handle_upload(
-        user,
-        %{files: files, transform: transform, batch_id: batch_id, props: props}
-      ) do
-    with {:ok, result} <-
-           Jason.encode(%Core.Mappings.Batch{
-             id: batch_id,
-             user_id: user.id,
-             files: files,
-             status: "queued",
-             timestamp: DateTime.utc_now(),
-             transform: %{
-               name: transform,
-               props: props
-             }
-           }),
+
+  def handle_upload(%Core.Mappings.Batch{} = dto) do
+    with {:ok, result} <- Jason.encode(dto),
          :ok <-
            publish_batch(result) do
-      {:ok, batch_id}
+      {:ok, dto}
     end
-
-    # create_batch_with_pictures(
-    #   %Core.Mappings.Batch{
-    #     id: batch_id,
-    #     files: files,
-    #     transform: %{
-    #       name: transform,
-    #       props: props
-    #     }
-    #   },
-    #   %{user_id: user.id}
-    # )
   end
 
   defp create_batch_with_pictures(%Core.Mappings.Batch{} = batch_dto, %{user_id: user_id}) do

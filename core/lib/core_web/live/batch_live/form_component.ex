@@ -95,19 +95,24 @@ defmodule CoreWeb.BatchLive.FormComponent do
     case Validators.Transform.validate(props, socket.assigns.transform) do
       {:ok, _spec} ->
         result =
-          Handlers.handle_upload(user, %{
+          Handlers.handle_upload(%Core.Mappings.Batch{
+            id: uuid,
+            user_id: user.id,
             files: uploaded_files,
-            transform: socket.assigns.transform,
-            props: props,
-            batch_id: uuid
+            status: "queued",
+            timestamp: DateTime.utc_now(),
+            transform: %{
+              name: socket.assigns.transform,
+              props: props
+            }
           })
 
         case result do
-          {:ok, batch_id} ->
+          {:ok, batch_dto} ->
             {:noreply,
              socket
-             |> assign(:batch_id, batch_id)
-             |> put_flash(:info, "Files uploaded with batch id #{batch_id}")}
+             |> assign(:batch_id, batch_dto.id)
+             |> put_flash(:info, "Files uploaded with batch id #{batch_dto.id}")}
 
           {:error, reason} ->
             {:noreply, put_flash(socket, :error, reason)}

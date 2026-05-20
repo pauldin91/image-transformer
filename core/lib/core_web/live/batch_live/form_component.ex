@@ -78,16 +78,6 @@ defmodule CoreWeb.BatchLive.FormComponent do
   def handle_event("save", _params, %{assigns: %{user: user}} = socket) do
     uuid = Ecto.UUID.generate()
 
-    uploaded_files =
-      consume_uploaded_entries(socket, :files, fn %{path: path}, entry ->
-        Storage.store_entry(%Core.Mappings.Entry{
-          path: path,
-          filename: entry.client_name,
-          content_type: entry.client_type,
-          batch_id: uuid
-        })
-      end)
-
     props =
       socket.assigns.props_entries
       |> Map.new(fn %{key: k, value: v} -> {k, to_string(v)} end)
@@ -98,7 +88,7 @@ defmodule CoreWeb.BatchLive.FormComponent do
           Handlers.handle_upload(%Core.Mappings.Batch{
             id: uuid,
             user_id: user.id,
-            files: uploaded_files,
+            files: copy_files(uuid, socket),
             status: "queued",
             timestamp: DateTime.utc_now(),
             transform: %{
@@ -124,6 +114,17 @@ defmodule CoreWeb.BatchLive.FormComponent do
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, reason)}
     end
+  end
+
+  defp copy_files(uuid, socket) do
+    consume_uploaded_entries(socket, :files, fn %{path: path}, entry ->
+      Storage.store_entry(%Core.Mappings.Entry{
+        path: path,
+        filename: entry.client_name,
+        content_type: entry.client_type,
+        batch_id: uuid
+      })
+    end)
   end
 
   defp merge_props_values(entries, props_params) do

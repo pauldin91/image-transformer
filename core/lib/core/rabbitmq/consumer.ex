@@ -1,4 +1,5 @@
 defmodule Core.RabbitMq.Consumer do
+  alias Core.Handlers
   alias Core.Uploads
   use GenServer
   require Logger
@@ -54,7 +55,8 @@ defmodule Core.RabbitMq.Consumer do
 
   @impl true
   def handle_info({:basic_deliver, payload, meta}, state) do
-    with {:ok, msg} <- Jason.decode(payload) do
+    with {:ok, msg} <- Jason.decode(payload),
+         {:ok, batch_id} <- Handlers.create_batch(msg) do
       batch = Uploads.get_batch!(msg["id"])
       Uploads.update_batch(batch, %{updated_at: msg["timestamp"], status: msg["status"]})
 

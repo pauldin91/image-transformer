@@ -6,16 +6,16 @@ defmodule Core.Handlers do
 
   alias Core.Mappings.Stored
 
-
   def handle_upload(%Core.Mappings.Batch{} = dto) do
     with {:ok, result} <- Jason.encode(dto),
          :ok <-
-           publish_batch(result) do
+           get_event_queue(dto.transform.name)
+           |> Core.RabbitMq.Publisher.publish_message(result) do
       {:ok, dto}
     end
   end
 
-  defp create_batch_with_pictures(%Core.Mappings.Batch{} = batch_dto, %{user_id: user_id}) do
+  def create_batch(%Core.Mappings.Batch{} = batch_dto) do
     status = "Processing"
 
     with {:ok, batch} <-
@@ -23,7 +23,7 @@ defmodule Core.Handlers do
              id: batch_dto.id,
              status: status,
              transform: batch_dto.transform.name,
-             user_id: user_id,
+             user_id: batch_dto.user_id,
              inserted_at: batch_dto.timestamp
            }),
          :ok <- link_all_pictures(batch_dto),
@@ -33,7 +33,6 @@ defmodule Core.Handlers do
              | timestamp: batch.inserted_at,
                status: status
            }) do
-      #  :ok <- publish_batch(serialized, batch_dto.transform.name) do
       {:ok, batch.id}
     end
   end
@@ -61,17 +60,8 @@ defmodule Core.Handlers do
     end
   end
 
-  defp publish_batch(batch) do
-    queue =
-      cond do
-        batch.transform.name == "convert" -> get_event_queue(:none)
-        true -> get_event_queue(batch.transform.name)
-      end
 
-    Core.RabbitMq.Publisher.publish_message(queue, batch)
-  end
-
-  defp get_event_queue(:none), do: Application.fetch_env!(:core, :processing_queues) |> Enum.at(0)
+  defp get_event_queue("convert"), do: Application.fetch_env!(:core, :processing_queues) |> Enum.at(0)
   defp get_event_queue(_name), do: Application.fetch_env!(:core, :processing_queues) |> Enum.at(1)
 
   def purge_user_batches(user_id) do

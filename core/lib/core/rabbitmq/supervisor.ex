@@ -32,6 +32,19 @@ defmodule Core.RabbitMq.Supervisor do
            ]},
         restart: :permanent,
         shutdown: 10_000
+      },
+      %{
+        id: Core.RabbitMq.Ingest,
+        start:
+          {Core.RabbitMq.Ingest, :start_link,
+           [
+             [
+               queue: Application.fetch_env!(:core, :ingest_queue),
+               name: Core.RabbitMq.Ingest
+             ]
+           ]},
+        restart: :permanent,
+        shutdown: 10_000
       }
     ]
 

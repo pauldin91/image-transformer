@@ -53,6 +53,12 @@ defmodule CoreWeb.BatchLive.Index do
      |> put_flash(:info, "Processing complete for #{batch_id}")}
   end
 
+  def handle_info({:batch_uploaded, batch_id}, socket) do
+    {:noreply,
+     socket
+     |> put_flash(:info, "Uploaded batch with id #{batch_id}")}
+  end
+
   def handle_info({:batch_created, batch}, socket) do
     {:noreply, stream_insert(socket, :batches, batch)}
   end
@@ -76,6 +82,7 @@ defmodule CoreWeb.BatchLive.Index do
   @impl true
   def handle_event("delete", %{"id" => id}, %{assigns: %{current_user: current_user}} = socket) do
     batch = Uploads.get_batch!(id)
+
     with {:ok, _} <- Uploads.delete_batch_for_user(batch, current_user) do
       {:noreply, stream_delete(socket, :batches, batch)}
     else

@@ -1,0 +1,19 @@
+{
+    "id": "354a43fc-33fd-466e-9cd8-ff76a96ccdd0",
+    "status": "queued",
+    "timestamp": "2026-05-20T19: 47: 53.824086Z",
+    "files": [
+        {
+            "size": 116328,
+            "filename": "demo_1.png",
+            "content_type": "image/png"
+        }
+    ],
+    "transform": {
+        "name": "rotate",
+        "props": {
+            "degrees": "34"
+        }
+    },
+    "user_id": 1
+}

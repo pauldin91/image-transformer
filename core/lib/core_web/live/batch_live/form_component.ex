@@ -85,7 +85,7 @@ defmodule CoreWeb.BatchLive.FormComponent do
     case Validators.Transform.validate(props, socket.assigns.transform) do
       {:ok, _spec} ->
         result =
-          Handlers.handle_upload(%Core.Mappings.Batch{
+          Handlers.ingest_publish(%Core.Mappings.Batch{
             id: uuid,
             user_id: user.id,
             files: copy_files(uuid, socket),

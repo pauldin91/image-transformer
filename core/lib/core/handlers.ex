@@ -6,16 +6,18 @@ defmodule Core.Handlers do
 
   alias Core.Mappings.Stored
 
-  def handle_upload(%Core.Mappings.Batch{} = dto) do
+  def ingest_publish(%Core.Mappings.Batch{} = dto) do
     with {:ok, result} <- Jason.encode(dto),
          :ok <-
-           get_event_queue(dto.transform.name)
+           get_event_queue(:ingest_queue)
            |> Core.RabbitMq.Publisher.publish_message(result) do
+      dbg(result)
       {:ok, dto}
     end
   end
 
   def create_batch(%Core.Mappings.Batch{} = batch_dto) do
+
     status = "Processing"
 
     with {:ok, batch} <-
@@ -60,8 +62,10 @@ defmodule Core.Handlers do
     end
   end
 
+  defp get_event_queue(:ingest_queue), do: Application.fetch_env!(:core,:ingest_queue)
+  defp get_event_queue("convert"),
+    do: Application.fetch_env!(:core, :processing_queues) |> Enum.at(0)
 
-  defp get_event_queue("convert"), do: Application.fetch_env!(:core, :processing_queues) |> Enum.at(0)
   defp get_event_queue(_name), do: Application.fetch_env!(:core, :processing_queues) |> Enum.at(1)
 
   def purge_user_batches(user_id) do

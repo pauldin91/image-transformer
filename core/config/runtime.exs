@@ -35,8 +35,11 @@ processing_queues =
 
 config :core, :processing_queues, processing_queues
 
+ingest_queue = System.get_env("INGEST_QUEUE") || "batch.ingest"
 processed_queue = System.get_env("PROCESSED_QUEUE") || "batch.processed"
+
 config :core, :processed_queue, processed_queue
+config :core, :ingest_queue, ingest_queue
 
 config :ueberauth, Ueberauth.Strategy.Github.OAuth,
   client_id: System.get_env("GITHUB_CLIENT_ID"),

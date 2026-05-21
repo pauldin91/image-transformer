@@ -48,12 +48,12 @@ defmodule Core.Handlers do
     end)
   end
 
-  defp link_picture(%Stored{} = stored, batch_id) do
+  defp link_picture(stored, batch_id) do
     with {:ok, _picture} <-
            Items.create_picture(%{
-             batch_id: batch_id,
-             name: stored.filename,
-             size: stored.size
+            batch_id: batch_id,
+             name: stored["filename"],
+             size: stored["size"]
            }) do
       :ok
     else

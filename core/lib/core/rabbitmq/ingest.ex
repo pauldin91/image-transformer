@@ -1,4 +1,5 @@
 defmodule Core.RabbitMq.Ingest do
+  alias Core.Metadata
   alias Core.Handlers
   alias Core.Uploads
   use GenServer
@@ -56,7 +57,11 @@ defmodule Core.RabbitMq.Ingest do
   @impl true
   def handle_info({:basic_deliver, payload, meta}, state) do
     with {:ok, msg} <- Jason.decode(payload),
-         {:ok, batch_id} <- Handlers.create_batch(Core.Mappings.Batch.from_msg(msg))do
+         {:ok, batch} <-
+           msg
+           |> Core.Mappings.Batch.from_msg()
+           |> Metadata.save(),
+         {:ok, batch_id} <- Handlers.create_batch(batch) do
       Phoenix.PubSub.broadcast(
         Core.PubSub,
         "batch:uloaded",

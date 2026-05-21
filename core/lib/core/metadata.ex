@@ -31,7 +31,7 @@ defmodule Core.Metadata do
 
     with {:ok, serialized} <- Jason.encode(batch, pretty: true),
          :ok <- File.write(batch_dir, serialized) do
-      {:ok, serialized}
+      {:ok, batch}
     else
       {:error, reason} -> {:error, reason}
     end

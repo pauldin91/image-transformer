@@ -4,14 +4,12 @@ defmodule Core.Handlers do
   alias Core.Storage
   alias Core.Items
 
-  alias Core.Mappings.Stored
 
   def ingest_publish(%Core.Mappings.Batch{} = dto) do
     with {:ok, result} <- Jason.encode(dto),
          :ok <-
            get_event_queue(:ingest_queue)
            |> Core.RabbitMq.Publisher.publish_message(result) do
-      dbg(result)
       {:ok, dto}
     end
   end

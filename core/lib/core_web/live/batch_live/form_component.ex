@@ -1,5 +1,4 @@
 defmodule CoreWeb.BatchLive.FormComponent do
-  alias Core.Metadata
   alias Core.Validators
   use CoreWeb, :live_component
 

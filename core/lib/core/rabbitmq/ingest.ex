@@ -1,7 +1,6 @@
 defmodule Core.RabbitMq.Ingest do
   alias Core.Metadata
   alias Core.Handlers
-  alias Core.Uploads
   use GenServer
   require Logger
 
@@ -72,8 +71,7 @@ defmodule Core.RabbitMq.Ingest do
 
       {:noreply, state}
     else
-      {:error, reason} ->
-        dbg(reason)
+      {:error, _reason} ->
         {:noreply, state}
     end
   end
